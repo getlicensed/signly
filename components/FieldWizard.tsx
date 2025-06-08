@@ -62,7 +62,36 @@ const FieldWizard: React.FC<FieldWizardProps> = ({ pdf }) => {
               fields={fields}
               setFields={setFields}
               readOnly={true}
+              showSampleData={true}
             />
+          )}
+          {step === 1 && (
+            <div className="w-full flex flex-row gap-8 items-start justify-center relative">
+              {/* Instructions on top */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 mt-2 text-lg font-semibold text-blue-700">Preview your document with sample data</div>
+              {/* PDF preview */}
+              <PDFSigner
+                pdf={pdf}
+                fields={fields}
+                readOnly={true}
+                showSampleData={true}
+              />
+              {/* Sample data box on right */}
+              <div className="w-64 bg-gray-50 border border-gray-200 p-6 flex flex-col gap-4 items-start" style={{ minWidth: 220 }}>
+                <div className="font-bold text-gray-700 mb-2">Sample Data</div>
+                <div className="text-gray-700"><span className="font-semibold">Full Name:</span> John Doe</div>
+                <div className="text-gray-700"><span className="font-semibold">Signature:</span> <span style={{ fontFamily: 'cursive', fontStyle: 'italic' }}>John Doe</span></div>
+                <div className="text-gray-700"><span className="font-semibold">Initials:</span> J.D</div>
+                <div className="text-gray-700"><span className="font-semibold">Date:</span> {new Date().toLocaleDateString('en-GB')}</div>
+                <button
+                  className="mt-4 flex items-center text-blue-600 hover:underline text-sm font-semibold"
+                  onClick={() => { setFields([]); setStep(0); }}
+                >
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582M20 20v-5h-.581M5 19A9 9 0 1 1 19 5" /></svg>
+                  Reset
+                </button>
+              </div>
+            </div>
           )}
           {step === 2 && (
             <div className="w-full flex flex-col items-center justify-center min-h-[400px]">

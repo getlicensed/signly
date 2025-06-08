@@ -19,11 +19,12 @@ interface PDFSignerProps {
   fields?: SignatureField[];
   setFields?: React.Dispatch<React.SetStateAction<SignatureField[]>>;
   readOnly?: boolean;
+  showSampleData?: boolean;
 }
 
 const SIGNATURE_BOX_SIZE = 64; // px
 
-const PDFSigner: React.FC<PDFSignerProps> = ({ pdf, fields, setFields, readOnly = false }) => {
+const PDFSigner: React.FC<PDFSignerProps> = ({ pdf, fields, setFields, readOnly = false, showSampleData = false }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isControlled = typeof fields !== 'undefined' && typeof setFields !== 'undefined';
@@ -137,18 +138,16 @@ const PDFSigner: React.FC<PDFSignerProps> = ({ pdf, fields, setFields, readOnly 
         style={{
           border: '0.5px solid #e5e7eb',
           minWidth: 96,
-          height: numPages <= 10 ? `${numPages * 100}px` : '1040px',
-          maxHeight: numPages > 10 ? '1040px' : undefined,
+          maxHeight: (viewport?.height || 600) + 32, // match PDF preview area, +padding
           overflowY: numPages > 10 ? 'auto' : 'visible',
-          transition: 'height 0.2s',
         }}
       >
 
         {Array.from({ length: numPages }, (_, idx) => (
           <button
             key={idx}
-            className={`mb-3 border-2  overflow-hidden focus:outline-none ${activePage === idx + 1 ? 'border-blue-600' : 'border-transparent'}`}
-            style={{ boxShadow: activePage === idx + 1 ? '0 0 0 2px #2563eb' : undefined, background: activePage === idx + 1 ? '#eff6ff' : undefined, width: '56px', height: '90px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
+            className={`mb-3 border-2 overflow-hidden focus:outline-none h-20 w-14 ${activePage === idx + 1 ? 'border-blue-600' : 'border-transparent'}`}
+            style={{ boxShadow: activePage === idx + 1 ? '0 0 0 2px #2563eb' : undefined, background: activePage === idx + 1 ? '#eff6ff' : undefined, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
             onClick={() => setActivePage(idx + 1)}
           >
             {thumbnails[idx] ? (
@@ -172,18 +171,48 @@ const PDFSigner: React.FC<PDFSignerProps> = ({ pdf, fields, setFields, readOnly 
           >
             {/* Signature boxes for active page only */}
             {fieldsToUse.filter(f => f.page === activePage).map(f => (
-              <DraggableSignatureBox
-                key={f.id}
-                field={f}
-                viewport={viewport}
-                onMove={readOnly ? (() => {}) : ((newX: number, newY: number) => {
-                  setFieldsToUse(fields => fields.map(field =>
-                    field.id === f.id ? { ...field, x: newX, y: newY } : field
-                  ));
-                })}
-                onRemove={readOnly ? (() => {}) : (() => removeField(f.id))}
-                onDragEnd={readOnly ? (() => {}) : (() => { wasDraggingRef.current = true; })}
-              />
+              readOnly && showSampleData ? (
+                <div
+                  key={f.id}
+                  style={{
+                    position: 'absolute',
+                    left: `${f.x * (viewport?.width || 1)}px`,
+                    top: `${f.y * (viewport?.height || 1)}px`,
+                    width: `${SIGNATURE_BOX_SIZE}px`,
+                    height: `${SIGNATURE_BOX_SIZE}px`,
+                    background: '#f8fafc',
+                    border: '1.5px solid #cbd5e1',
+                    borderRadius: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#334155',
+                    fontWeight: 600,
+                    fontSize: 16,
+                    fontFamily: f.type === 'signature' ? 'cursive' : undefined,
+                    fontStyle: f.type === 'signature' ? 'italic' : undefined,
+                    zIndex: 10,
+                  }}
+                >
+                  {f.type === 'signature' && <span>John Doe</span>}
+                  {f.type === 'name' && <span>John Doe</span>}
+                  {f.type === 'initials' && <span>J.D</span>}
+                  {f.type === 'date' && <span>{new Date().toLocaleDateString('en-GB')}</span>}
+                </div>
+              ) : (
+                <DraggableSignatureBox
+                  key={f.id}
+                  field={f}
+                  viewport={viewport}
+                  onMove={readOnly ? (() => {}) : ((newX: number, newY: number) => {
+                    setFieldsToUse(fields => fields.map(field =>
+                      field.id === f.id ? { ...field, x: newX, y: newY } : field
+                    ));
+                  })}
+                  onRemove={readOnly ? (() => {}) : (() => removeField(f.id))}
+                  onDragEnd={readOnly ? (() => {}) : (() => { wasDraggingRef.current = true; })}
+                />
+              )
             ))}
           </div>
           <canvas ref={canvasRef} className="block" style={{ zIndex: 0 }} />
