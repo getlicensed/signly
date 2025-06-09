@@ -13,6 +13,8 @@ interface SignatureField {
   page: number;
   id: string;
   type: FieldType;
+  width?: number;
+  height?: number;
 }
 
 const steps = [
@@ -24,6 +26,7 @@ const steps = [
 const FieldWizard: React.FC<FieldWizardProps> = ({ pdf }) => {
   const [step, setStep] = useState(0);
   const [fields, setFields] = useState<SignatureField[]>([]);
+  const [activePage, setActivePage] = useState(1);
 
   if (!pdf) return null;
 
@@ -47,6 +50,7 @@ const FieldWizard: React.FC<FieldWizardProps> = ({ pdf }) => {
 
       {/* Step content, center-aligned, with bottom margin for nav bar */}
       <div className="flex-1 flex flex-col items-center justify-center w-full" style={{ marginBottom: 100 }}>
+        <div className="mb-2 text-xs text-red-500">DEBUG: step = {step}</div>
         <div className="p-6 flex flex-col items-center min-h-[600px] w-full max-w-5xl">
           {step === 0 && (
             <PDFSigner
@@ -54,29 +58,27 @@ const FieldWizard: React.FC<FieldWizardProps> = ({ pdf }) => {
               fields={fields}
               setFields={setFields}
               readOnly={false}
+              activePage={activePage}
+              setActivePage={setActivePage}
             />
           )}
+
           {step === 1 && (
-            <PDFSigner
-              pdf={pdf}
-              fields={fields}
-              setFields={setFields}
-              readOnly={true}
-              showSampleData={true}
-            />
-          )}
-          {step === 1 && (
-            <div className="w-full flex flex-row gap-8 items-start justify-center relative">
-              {/* Instructions on top */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 mt-2 text-lg font-semibold text-blue-700">Preview your document with sample data</div>
-              {/* PDF preview */}
-              <PDFSigner
-                pdf={pdf}
-                fields={fields}
-                readOnly={true}
-                showSampleData={true}
-              />
-              {/* Sample data box on right */}
+            <div className="w-full flex flex-row gap-8 items-start justify-center">
+              {/* Left: PDF preview */}
+              <div className="flex flex-col items-center flex-1">
+                <div className="mb-2 text-xs text-red-500">DEBUG: fields.length = {fields.length}</div>
+              <div className="mb-6 text-lg font-semibold text-blue-700">Preview your document with sample data</div>
+                <PDFSigner
+                  pdf={pdf}
+                  fields={fields}
+                  readOnly={true}
+                  showSampleData={true}
+                  activePage={activePage}
+                  setActivePage={setActivePage}
+                />
+              </div>
+              {/* Right: Sample data box */}
               <div className="w-64 bg-gray-50 border border-gray-200 p-6 flex flex-col gap-4 items-start" style={{ minWidth: 220 }}>
                 <div className="font-bold text-gray-700 mb-2">Sample Data</div>
                 <div className="text-gray-700"><span className="font-semibold">Full Name:</span> John Doe</div>
@@ -92,6 +94,9 @@ const FieldWizard: React.FC<FieldWizardProps> = ({ pdf }) => {
                 </button>
               </div>
             </div>
+          )}
+          {step !== 1 && (
+            <div className="w-full flex flex-row items-center justify-center text-red-600 font-bold">DEBUG: This is not the preview step. Current step = {step}</div>
           )}
           {step === 2 && (
             <div className="w-full flex flex-col items-center justify-center min-h-[400px]">

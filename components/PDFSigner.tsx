@@ -20,11 +20,21 @@ interface PDFSignerProps {
   setFields?: React.Dispatch<React.SetStateAction<SignatureField[]>>;
   readOnly?: boolean;
   showSampleData?: boolean;
+  activePage: number;
+  setActivePage: React.Dispatch<React.SetStateAction<number>>;
 }
 
 const SIGNATURE_BOX_SIZE = 64; // px
 
-const PDFSigner: React.FC<PDFSignerProps> = ({ pdf, fields, setFields, readOnly = false, showSampleData = false }) => {
+const PDFSigner: React.FC<PDFSignerProps> = ({
+  pdf,
+  fields,
+  setFields,
+  readOnly = false,
+  showSampleData = false,
+  activePage,
+  setActivePage
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isControlled = typeof fields !== 'undefined' && typeof setFields !== 'undefined';
@@ -33,7 +43,7 @@ const PDFSigner: React.FC<PDFSignerProps> = ({ pdf, fields, setFields, readOnly 
   const setFieldsToUse: React.Dispatch<React.SetStateAction<SignatureField[]>> = isControlled ? setFields! : internalSetFields;
   const [selectedFieldType, setSelectedFieldType] = useState<FieldType>("signature");
   const [viewport, setViewport] = useState<{ width: number; height: number } | null>(null);
-  const [activePage, setActivePage] = useState(1);
+
   const [thumbnails, setThumbnails] = useState<string[]>([]); // data URLs for thumbnails
   const numPages = pdf.numPages;
   const wasDraggingRef = useRef(false);
@@ -163,6 +173,9 @@ const PDFSigner: React.FC<PDFSignerProps> = ({ pdf, fields, setFields, readOnly 
       <div className="flex flex-row flex-1 items-center justify-center gap-8" style={{ minHeight: 400, marginBottom: 120 }}>
         {/* PDF Canvas */}
         <div className="relative mx-auto" style={{ width: viewport?.width || 0, height: viewport?.height || 0 }}>
+          <div className="absolute -top-8 left-0 text-xs text-red-500">
+            DEBUG: activePage = {activePage}, fields on this page: {JSON.stringify(fieldsToUse.filter(f => f.page === activePage))}
+          </div>
           <div
             ref={containerRef}
             className="absolute top-0 left-0 w-full h-full cursor-crosshair"
@@ -178,8 +191,8 @@ const PDFSigner: React.FC<PDFSignerProps> = ({ pdf, fields, setFields, readOnly 
                     position: 'absolute',
                     left: `${f.x * (viewport?.width || 1)}px`,
                     top: `${f.y * (viewport?.height || 1)}px`,
-                    width: `${SIGNATURE_BOX_SIZE}px`,
-                    height: `${SIGNATURE_BOX_SIZE}px`,
+                    width: `${(f.width ?? 0.18) * (viewport?.width || 1)}px`,
+                    height: `${(f.height ?? 0.08) * (viewport?.height || 1)}px`,
                     background: '#f8fafc',
                     border: '1.5px solid #cbd5e1',
                     borderRadius: 6,
